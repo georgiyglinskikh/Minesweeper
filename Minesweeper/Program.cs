@@ -14,6 +14,7 @@ namespace Minesweeper
             window.SetVerticalSyncEnabled(true);
 
             window.Closed += (a, e) => { window.Close(); };
+            
 
             while (window.IsOpen)
             {
