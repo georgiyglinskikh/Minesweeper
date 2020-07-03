@@ -1,5 +1,4 @@
-﻿using System;
-using SFML.Window;
+﻿using SFML.Window;
 using SFML.Graphics;
 using SFML.System;
 
@@ -15,6 +14,13 @@ namespace Minesweeper
 
             window.Closed += (a, e) => { window.Close(); };
             
+            var rect = new RectangleShape()
+            {
+                Size = new Vector2f(10, 10),
+                FillColor = Color.Yellow,
+                Position = new Vector2f(10, 10)
+            };
+            
             while (window.IsOpen)
             {
                 window.DispatchEvents();
@@ -22,6 +28,7 @@ namespace Minesweeper
                 window.Clear();
                 
                 // Отрисовка
+                window.Draw(rect);
                 
                 window.Display();
             }
