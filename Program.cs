@@ -1,4 +1,5 @@
-﻿using SFML.Window;
+﻿using System;
+using SFML.Window;
 using SFML.Graphics;
 using SFML.System;
 
@@ -32,8 +33,13 @@ namespace Minesweeper
             {
                 window.DispatchEvents();
 
+                if (Keyboard.IsKeyPressed(Keyboard.Key.Right))
+                {
+                    Console.WriteLine("Favourite button");
+                }
+                
                 window.Clear();
-
+                
                 // Отрисовка
                 window.Draw(rect);
                 window.Draw(circle);
