@@ -4,142 +4,192 @@ using SFML.System;
 
 namespace Minesweeper
 {
-    class Cell : Transformable, Drawable
+    internal class Cell : Transformable, Drawable
     {
-        public const Color ColorMine = Color.Black;
-        public const Color ColorFlag = Color.Red;
-        public const Color ColorClosed = Color.Grey;
-        public const Color ColorNumber = Color.Blue;
+        public static Vector2f CellSize;
 
-        public bool isMine { get; set; }
-        public bool isOpened { get; set; }
-        public bool isFlagged { get; set; }
+        // region Константы
+        
+        /** Цвет заливки для минки */
+        public static readonly Color ColorMine = Color.Black;
+        
+        /** Цвет флага, не видать врага */
+        public static readonly Color ColorFlag = Color.Red;
+        
+        /** Цвет закрытой клетки, как фантик у конфетки */
+        public static readonly Color ColorClosed = new Color(127, 127, 127);
+        
+        /** Цвет номера, ему все рады, ведь он преодолел преграды */
+        public static readonly Color ColorNumber = Color.Blue;
+        
+        // endregion
 
-        /** 0 = Пустая клетка */
+        /** Является ли клетка минкой? */
+        public bool IsMine { get; set; }
+        
+        /** Открыта ли клетка (по умолчанию - нет)? */
+        public bool IsOpened { get; set; }
+        
+        /** Поставлен ли флаг на клетку? */
+        public bool IsFlagged { get; set; }
+
+        /** Число минок расположеных по близости 0 = Пустая клетка */
         public int Number { get; set; }
 
+        /** Отрисовка примитивов, формирующих клетку */
         public void Draw(RenderTarget target, RenderStates states)
         {
+            // Установка цвета в зависимости от состояния клетки
+            if (IsMine)
+                Content.RectangleShape.FillColor = ColorMine;
+            if (Number > 0)
+                Content.RectangleShape.FillColor = ColorNumber;
+            if (!IsOpened)
+                Content.RectangleShape.FillColor = ColorClosed;
+            if (IsFlagged)
+                Content.RectangleShape.FillColor = ColorFlag;
 
+            Content.RectangleShape.Size = CellSize;
+            Content.RectangleShape.Position = Position;
+
+            target.Draw(Content.RectangleShape);
         }
     }
 
-    class Field : Transformable, Drawable
+    internal class Field : Transformable, Drawable
     {
         // Параметры
-        public const float RadiusWithoutMines = 50;
+        private const float RadiusWithoutMines = 50;
 
-        public Cell[,] Cells { get; set; }
+        public bool WasGenerated { get; private set; }
 
-        private static Random rand = new Random();
+        private Cell[,] Cells { get; set; }
+
+        private static readonly Random Random = new Random();
 
         // Vector[измерения (2-4)][тип (f = float, i = int, u = uint)]
 
-        public static bool IsMineInRadius(float r, Vector2f clickPosition, Vector2i minePosition)
+        private static bool IsMineInRadius(float r, Vector2i clickPosition, Vector2i minePosition)
         {
-            var delta = new Vector2f(Math.Abs(clickPosition.X - minePosition.X), Math.Abs(clickPosition.X - minePosition.X));
+            var delta = new Vector2f(Math.Abs(clickPosition.X - minePosition.X),
+                Math.Abs(clickPosition.X - minePosition.X));
 
             var hypo = Math.Sqrt(Math.Pow(delta.X, 2) + Math.Pow(delta.Y, 2));
 
             return hypo <= r;
         }
 
-        public Vector2i[] GenerateMines(int n, Vector2f clickPosition)
+        private Vector2i[] GenerateMines(int n, Vector2i clickPosition)
         {
             var res = new Vector2i[n];
 
             // Логика создания
-            for (int i = 0; i < n; i++)
+            for (var i = 0; i < n; i++)
             {
-                var newCoof = new Vector2f((float)rand.NextDouble(), (float)rand.NextDouble());
+                var newCoefficient = new Vector2f((float) Random.NextDouble(), (float) Random.NextDouble());
 
-                var newCoord = new Vector2i(
-                    (int)((float)Cells.GetLength(0) * newCoof.X),
-                    (int)((float)Cells.GetLength(1) * newCoof.Y)
+                var newCoordinates = new Vector2i(
+                    (int) (Cells.GetLength(0) * newCoefficient.X),
+                    (int) (Cells.GetLength(1) * newCoefficient.Y)
                 );
 
-                bool isCollision = false;
-                for (int j = 0; j < i; j++)
-                    if (res[j].X == newCoord.X && res[j].Y == newCoord.Y)
+                var isCollision = false;
+                for (var j = 0; j < i; j++)
+                    if (res[j].X == newCoordinates.X && res[j].Y == newCoordinates.Y)
                         isCollision = true;
 
-                if (isCollision && IsMineInRadius(RadiusWithoutMines, clickPosition, newCoord))
+                if (isCollision || IsMineInRadius(RadiusWithoutMines, clickPosition, newCoordinates))
                     i--;
                 else
-                    res[n] = newCoord;
+                    res[n] = newCoordinates;
             }
 
             return res;
         }
 
-        public int GetNumberOf(Vector2i certer, Func<int, int, bool> comp)
+        private int GetNumberOf(Vector2i center, Func<int, int, bool> comp)
         {
-            // if (Cells[certer.X, certer.Y].isMine)
-            //     return -1;
-
-            // (i, j) => Cells[certer.X + i, certer.Y + j].IsMine
-            if (comp(certer.X, certer.Y))
+            if (comp(center.X, center.Y))
                 return -1;
 
-            int res = 0;
+            var res = 0;
 
-            for (int i = -1; i <= 1; i++)
-                for (int j = -1; j <= 1; j++)
-                    if (certer.X + i >= 0 &&
-                        certer.Y + j >= 0 &&
-                        certer.X + i >= Cells.GetLength(0) &&
-                        certer.Y + j >= Cells.GetLength(1) &&
-                        comp(certer.X + i, certer.Y + j))
-                        res++;
+            for (var i = -1; i <= 1; i++)
+            for (var j = -1; j <= 1; j++)
+                if (center.X + i >= 0 &&
+                    center.Y + j >= 0 &&
+                    center.X + i >= Cells.GetLength(0) &&
+                    center.Y + j >= Cells.GetLength(1) &&
+                    comp(center.X + i, center.Y + j))
+                    res++;
 
             return res;
         }
 
-        public void Generate(Vector2i size, Vector2f clickPosition)
+        private void ForEachInCells(Func<int, int, int> func)
+        {
+            for (var i = 0; i < Cells.GetLength(0); i++)
+            for (var j = 0; j < Cells.GetLength(1); j++)
+                func(i, j);
+        }
+
+        public void Generate(Vector2i size, Vector2i clickPosition)
         {
             Cells = new Cell[size.X, size.Y];
 
             var mines = GenerateMines(16, clickPosition);
             foreach (var mine in mines)
-                Cells[mine.X, mine.Y] = new Cell() { isMine = true };
+                Cells[mine.X, mine.Y] = new Cell {IsMine = true};
 
-            for (int i = 0; i < Cells.GetLength(0); i++)
-                for (int j = 0; j < Cells.GetLength(1); j++)
-                    Cells[i, j] = new Cell()
-                    {
-                        Number = GetNumberOf(new Vector2i(i, j), (int x, int y) => Cells[x, y].isMine)
-                    };
+            ForEachInCells((i, j) =>
+            {
+                Cells[i, j] = new Cell
+                {
+                    Number = GetNumberOf(new Vector2i(i, j), (x, y) => Cells[x, y].IsMine)
+                };
+                return 0;
+            });
 
-            for (int i = 0; i < Cells.GetLength(0); i++)
-                for (int j = 0; j < Cells.GetLength(1); j++)
-                    Cells[i, j].isOpened = true;
+            ForEachInCells((i, j) =>
+            {
+                Cells[i, j].IsOpened = true;
+                return 0;
+            });
 
-            var clickedCellPosition =
-                new Vector2i((int)Math.Round(clickPosition.X), (int)Math.Round(clickPosition.Y));
+            Open(clickPosition);
 
-            Open(clickedCellPosition);
+            WasGenerated = true;
         }
-
-        public static Vector2f CellSize;
 
         public void UpdateCellSizes(Vector2u windowSize)
         {
-            CellSize = new Vector2f();
+            Cell.CellSize = new Vector2f(
+                windowSize.X / (float) Cells.GetLength(0),
+                windowSize.Y / (float) Cells.GetLength(1)
+            );
+
+            ForEachInCells((i, j) =>
+            {
+                Cells[i, j].Position = new Vector2f(
+                    Cell.CellSize.X * i,
+                    Cell.CellSize.Y * j); // TODO: Сделать зазор
+                return 0;
+            });
         }
 
-        public void Open(Vector2i clickPosition)
+        private void Open(Vector2i clickPosition)
         {
             // TODO:
-            Cells[clickPosition.X, clickPosition.Y].isOpened = true;
+            Cells[clickPosition.X, clickPosition.Y].IsOpened = true;
 
-            for (int i = -1; i <= 1; i++)
+            for (var i = -1; i <= 1; i++)
             {
-                for (int j = -1; j <= 1; j++)
+                for (var j = -1; j <= 1; j++)
                 {
                     var resPosition =
                         new Vector2i(clickPosition.X + i, clickPosition.Y + j);
 
-                    if (GetNumberOf(resPosition, (int x, int y) => Cells[x, y].Number != 0) <= 3 &&
+                    if (GetNumberOf(resPosition, (x, y) => Cells[x, y].Number != 0) <= 3 &&
                         Cells[resPosition.X, resPosition.Y].Number != -1)
                         Open(resPosition);
                 }
@@ -148,12 +198,13 @@ namespace Minesweeper
 
         public void Draw(RenderTarget target, RenderStates states)
         {
-            for (int i = 0; i < Cells.GetLength(0); i++)
+            if (WasGenerated)
             {
-                for (int j = 0; j < Cells.GetLength(1); j++)
+                ForEachInCells((i, j) =>
                 {
                     target.Draw(Cells[i, j]);
-                }
+                    return 0;
+                });
             }
         }
     }

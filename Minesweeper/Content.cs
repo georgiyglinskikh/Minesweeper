@@ -2,13 +2,25 @@ using SFML.Graphics;
 
 namespace Minesweeper
 {
-    static class Content
+    /** Класс содержит контент, нужный для отрисовки */
+    internal static class Content
     {
-        public static RectangleShape rectangle;
-
+        // region Объекты
+        
+        /** Квадрат, который используеться только при отрисовке */
+        public static RectangleShape RectangleShape;
+        
+        // endregion
+        
+        
+        // region Методы
+        
+        /** Загрузить в память текстуры, примитивы и тд. */
         public static void Load()
         {
-            rectangle = new RectangleShape();
+            RectangleShape = new RectangleShape(); // Инициализация квадратной фигуры
         }
+        
+        // endregion
     }
 }
