@@ -5,11 +5,11 @@ using SFML.System;
 
 namespace Minesweeper
 {
-    class Program
+    internal static class Program
     {
-        static void Main(string[] args)
+        private static void Main(string[] args)
         {
-            // region Инициализация
+            // --- Инициализация ---
             
             var fieldSize = new Vector2i(
                 Convert.ToInt32(Console.ReadLine()),
@@ -22,10 +22,11 @@ namespace Minesweeper
 
             var field = new Field(); // Создаем поле
             
-            // region Добавление обработчиков событий
+            
+            // --- Добавление обработчиков событий ---
             
             // Обработчик закрытия окна
-            window.Closed += (a, e) => { window.Close(); /* Закрытие окна */ };
+            window.Closed += (a, e) => { window.Close(); };
             
             // Обработчик изменения размера окна
             window.Resized += (sender, eventArgs) =>
@@ -34,7 +35,7 @@ namespace Minesweeper
                     new View(new FloatRect(0, 0, eventArgs.Width, eventArgs.Height))
                 ); // Изменение размера области для отрисовки внутри окна
 
-                if (field.WasGenerated) // Если поле уже сгенерированно, то обновить размеры клеток
+                if (field.WasGenerated)
                     field.UpdateCellSizes(window.Size);
             };
 
@@ -42,14 +43,10 @@ namespace Minesweeper
             window.MouseButtonPressed += (sender, eventArgs) =>
             {
                 if (!field.WasGenerated && eventArgs.Button == Mouse.Button.Left)
-                    field.Generate(fieldSize, new Vector2i(eventArgs.X, eventArgs.Y)); // Если нажали ЛКМ, то генерируется поле 
+                    field.Generate(fieldSize, new Vector2i(eventArgs.X, eventArgs.Y));
             };
-            
-            // endregion
-            
-            // endregion
 
-            // Главный игровой цикл
+            // --- Главный игровой цикл ---
             while (window.IsOpen)
             {
                 window.DispatchEvents(); // Запуск работы обработчиков событий
@@ -57,7 +54,7 @@ namespace Minesweeper
                 window.Clear(); // Очистка экрана (заливка черным цветом)
 
                 // Отрисовка в буфер
-                window.Draw(field); // Отрисовка поля и его составляющих
+                window.Draw(field);
 
                 window.Display(); // Смена буфера = вывод на экран
             }

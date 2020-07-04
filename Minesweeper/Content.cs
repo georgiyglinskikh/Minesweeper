@@ -5,22 +5,17 @@ namespace Minesweeper
     /** Класс содержит контент, нужный для отрисовки */
     internal static class Content
     {
-        // region Объекты
+        // --- Примитивы ---
         
-        /** Квадрат, который используеться только при отрисовке */
+        /** Квадрат (используеться для отрисовки) */
         public static RectangleShape RectangleShape;
         
-        // endregion
         
-        
-        // region Методы
-        
+        // --- Методы ---
         /** Загрузить в память текстуры, примитивы и тд. */
         public static void Load()
         {
-            RectangleShape = new RectangleShape(); // Инициализация квадратной фигуры
+            RectangleShape = new RectangleShape();
         }
-        
-        // endregion
     }
 }

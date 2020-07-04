@@ -6,24 +6,17 @@ namespace Minesweeper
 {
     internal class Cell : Transformable, Drawable
     {
+        // --- Параметры (как часть состояния) ---
         public static Vector2f CellSize;
 
-        // region Константы
-        
-        /** Цвет заливки для минки */
-        public static readonly Color ColorMine = Color.Black;
-        
-        /** Цвет флага, не видать врага */
-        public static readonly Color ColorFlag = Color.Red;
-        
-        /** Цвет закрытой клетки, как фантик у конфетки */
-        public static readonly Color ColorClosed = new Color(127, 127, 127);
-        
-        /** Цвет номера, ему все рады, ведь он преодолел преграды */
-        public static readonly Color ColorNumber = Color.Blue;
-        
-        // endregion
+        // --- Константы ---
+        private static readonly Color ColorMine = Color.Black;
+        private static readonly Color ColorFlag = Color.Red;
+        private static readonly Color ColorClosed = new Color(127, 127, 127);
+        private static readonly Color ColorNumber = Color.Blue;
 
+        // --- Свойства ---
+        
         /** Является ли клетка минкой? */
         public bool IsMine { get; set; }
         
@@ -35,7 +28,8 @@ namespace Minesweeper
 
         /** Число минок расположеных по близости 0 = Пустая клетка */
         public int Number { get; set; }
-
+        
+        // --- Методы ---
         /** Отрисовка примитивов, формирующих клетку */
         public void Draw(RenderTarget target, RenderStates states)
         {
@@ -56,19 +50,20 @@ namespace Minesweeper
         }
     }
 
+    /** Поле, для которого реализована отрисовка и генерация */
     internal class Field : Transformable, Drawable
     {
-        // Параметры
+        // --- Константы ---
         private const float RadiusWithoutMines = 50;
-
-        public bool WasGenerated { get; private set; }
-
-        private Cell[,] Cells { get; set; }
-
         private static readonly Random Random = new Random();
 
-        // Vector[измерения (2-4)][тип (f = float, i = int, u = uint)]
+        // Свойства
+        /** Снегерировано поле или пустое? */
+        public bool WasGenerated { get; private set; }
+        /** 2-d массив клеток, представляющий поле */
+        private Cell[,] Cells { get; set; }
 
+        // --- Вспомогательные функции ---
         private static bool IsMineInRadius(float r, Vector2i clickPosition, Vector2i minePosition)
         {
             var delta = new Vector2f(Math.Abs(clickPosition.X - minePosition.X),
@@ -133,14 +128,18 @@ namespace Minesweeper
                 func(i, j);
         }
 
+        // --- Методы ---
+        /** Создание поля после клика */
         public void Generate(Vector2i size, Vector2i clickPosition)
         {
             Cells = new Cell[size.X, size.Y];
 
+            // Вставка мин на поле
             var mines = GenerateMines(16, clickPosition);
             foreach (var mine in mines)
                 Cells[mine.X, mine.Y] = new Cell {IsMine = true};
 
+            // Устанавливаем цифры в клетках по количеству мин поблизости
             ForEachInCells((i, j) =>
             {
                 Cells[i, j] = new Cell
@@ -150,23 +149,26 @@ namespace Minesweeper
                 return 0;
             });
 
+            // Зактываем все клетки
             ForEachInCells((i, j) =>
             {
-                Cells[i, j].IsOpened = true;
+                Cells[i, j].IsOpened = false;
                 return 0;
             });
 
+            // Открываем клетки в месте клика
             Open(clickPosition);
 
             WasGenerated = true;
         }
 
+        /** Изменения размера клеток после изменения размера окна */
         public void UpdateCellSizes(Vector2u windowSize)
         {
             Cell.CellSize = new Vector2f(
                 windowSize.X / (float) Cells.GetLength(0),
                 windowSize.Y / (float) Cells.GetLength(1)
-            );
+            ); // По пропорции вычисляем нужный размер
 
             ForEachInCells((i, j) =>
             {
@@ -174,14 +176,15 @@ namespace Minesweeper
                     Cell.CellSize.X * i,
                     Cell.CellSize.Y * j); // TODO: Сделать зазор
                 return 0;
-            });
+            }); // Изменяем положение клеток на основе нового размера
         }
 
+        /** Рекурсивное открытие пустых клеток, пока рядом не оказываються минимум 2 других цифры */
         private void Open(Vector2i clickPosition)
         {
-            // TODO:
             Cells[clickPosition.X, clickPosition.Y].IsOpened = true;
 
+            // Перебор ближайших клеток
             for (var i = -1; i <= 1; i++)
             {
                 for (var j = -1; j <= 1; j++)
@@ -191,11 +194,12 @@ namespace Minesweeper
 
                     if (GetNumberOf(resPosition, (x, y) => Cells[x, y].Number != 0) <= 3 &&
                         Cells[resPosition.X, resPosition.Y].Number != -1)
-                        Open(resPosition);
+                        Open(resPosition); // Рекурсивный вызов
                 }
             }
         }
 
+        /** Отрисовка всех клеток на поле */
         public void Draw(RenderTarget target, RenderStates states)
         {
             if (WasGenerated)
@@ -204,7 +208,7 @@ namespace Minesweeper
                 {
                     target.Draw(Cells[i, j]);
                     return 0;
-                });
+                }); // Вызов метода отрисовки у каждой клетки
             }
         }
     }
