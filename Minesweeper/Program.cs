@@ -22,6 +22,8 @@ namespace Minesweeper
 
             var field = new Field(); // Создаем поле
             
+            Content.Load();
+            
             
             // --- Добавление обработчиков событий ---
             
@@ -43,7 +45,7 @@ namespace Minesweeper
             window.MouseButtonPressed += (sender, eventArgs) =>
             {
                 if (!field.WasGenerated && eventArgs.Button == Mouse.Button.Left)
-                    field.Generate(fieldSize, new Vector2i(eventArgs.X, eventArgs.Y));
+                    field.Generate(fieldSize, new Vector2i(eventArgs.X, eventArgs.Y), window.Size);
             };
 
             // --- Главный игровой цикл ---
