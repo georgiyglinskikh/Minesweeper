@@ -53,7 +53,7 @@ namespace Minesweeper
             {
                 window.DispatchEvents(); // Запуск работы обработчиков событий
 
-                window.Clear(); // Очистка экрана (заливка черным цветом)
+                window.Clear(Cell.ColorClosed); // Очистка экрана (заливка черным цветом)
 
                 // Отрисовка в буфер
                 window.Draw(field);

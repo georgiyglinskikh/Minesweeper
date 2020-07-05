@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using SFML.Graphics;
 using SFML.System;
 
@@ -10,21 +11,22 @@ namespace Minesweeper
         /**Открыто? Есть флаг? Мина? Число (0 - пустая клетка)
          * |        |          |     |
          * 0________0__________0_____0000 */
+        [Flags]
         public enum States
         {
-            Open = 0x1000000,
-            Flag = 0x0100000,
-            Mine = 0x0010000
+            Open = 0b1_0_0_0000,
+            Flag = 0b0_1_0_0000,
+            Mine = 0b0_0_1_0000
         }
 
         // --- Параметры (как часть состояния) ---
         public static Vector2f CellSize;
 
         // --- Константы ---
-        private static readonly Color ColorMine = Color.Black;
-        private static readonly Color ColorFlag = Color.Red;
-        private static readonly Color ColorClosed = new Color(127, 127, 127);
-        private static readonly Color ColorNumber = Color.Blue;
+        public static readonly Color ColorMine = Color.Black;
+        public static readonly Color ColorFlag = Color.Red;
+        public static readonly Color ColorClosed = new Color(127, 127, 127);
+        public static readonly Color ColorNumber = Color.Blue;
 
         // --- Поля ---
         private int State;
@@ -54,20 +56,20 @@ namespace Minesweeper
         /** Число минок расположеных по близости 0 = Пустая клетка До 8 */
         public int Number
         {
-            get => State & 0x1111;
+            get => State & 0x_1111;
             set
             {
-                State &= 0x0;
+                State &= 0b1_1_1_0000;
                 State |= value;
             }
         }
 
         // --- Методы ---
-        public bool IsState(States state) => (State & (int) state) == (int) state;
+        public bool IsState(States state) => (State & (byte) state) == (byte) state;
 
         public void ChangeState(States state)
         {
-            State ^= (int) state;
+            State ^= (byte) state;
         }
 
         /** Отрисовка примитивов, формирующих клетку */
@@ -246,9 +248,9 @@ namespace Minesweeper
             while (next.Count > 0)
             {
                 var current = next.Dequeue();
-                
+
                 Cells[current.X][current.Y].IsOpened = true;
-                
+
                 // Перебор ближайших клеток
                 for (var i = -1; i <= 1; i++)
                 {
@@ -257,20 +259,29 @@ namespace Minesweeper
                         var resPosition =
                             new Vector2i(current.X + i, current.Y + j);
 
-                        if (IsPositionInField(resPosition) && 
-                            8 - GetNumberOf(resPosition, 0) >= 3 &&
-                            Cells[resPosition.X][resPosition.Y].Number != -1 && 
-                            !used.Contains(resPosition))
+                        // Нужно проверять на наличие этого вектора так, потому что метод Equals не перегружен у векторов
+                        var contains = false;
+                        foreach (var vector in used)
                         {
-                            next.Enqueue(resPosition); // Рекурсивный вызов
-                            used.Add(resPosition);
+                            if (vector.X == resPosition.X && vector.Y == resPosition.Y)
+                            {
+                                contains = true;
+                                break;
+                            }
                         }
 
+                        if (!contains)
+                        {
+                            if (IsPositionInField(resPosition) &&
+                                8 - GetNumberOf(resPosition, 0) >= 3 &&
+                                !Cells[resPosition.X][resPosition.Y].IsMine)
+                                next.Enqueue(resPosition); // Рекурсивный вызов
+                            
+                            used.Add(resPosition);
+                        }
                     }
                 }
             }
-            
-            
         }
 
         /** Отрисовка всех клеток на поле */
